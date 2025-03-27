@@ -17,47 +17,28 @@
         <i class="fa-solid fa-code-branch"></i>
         <span>WaveGuardian</span>
       </div>
-
-      <div class="middle">
-        <form>
-          <label for="search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </label>
-          <input id="search" type="text" placeholder="Recherche utilisateur" />
-        </form>
-      </div>
       <div class="right">
+        <button id="add_badge">
+          <i class="fa-solid fa-credit-card"></i> Enregister un badge
+        </button>
         <button id="add_user">
           <i class="fa-solid fa-plus"></i> Ajouter utilisateur
+        </button>
+        <button id="login-user">
+          <i class="fa-solid fa-right-to-bracket"></i> Se connecter
         </button>
       </div>
     </header>
 
     <!-- Main -->
-    <main id="user">
-      <!-- <div class="user-card">
-        <div class="user-card-left">
-          <span>Jean Benoit</span>
-          <span>Membre</span>
-        </div>
-
-        <div class="user-card-right">
-          <i class="fa-solid fa-pen"></i>
-          <i class="fa-solid fa-trash"></i>
-        </div>
-      </div>
-
-      <div class="user-card">
-        <div class="user-card-left">
-          <span>Jean Benoit</span>
-          <span>Membre</span>
-        </div>
-
-        <div class="user-card-right">
-          <i class="fa-solid fa-pen"></i>
-          <i class="fa-solid fa-trash"></i>
-        </div>
-      </div> -->
+    <main>
+      <form>
+        <label for="search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </label>
+        <input id="search" type="text" placeholder="Recherche utilisateur" />
+      </form>
+      <section id="userList"></section>
     </main>
 
     <!-- Footer -->
@@ -78,47 +59,12 @@
 
     <!-- Modal -->
 
-    <div id="modal-add-user">
-      <div class="modal_header">
-        <span>Ajouter un utilisateur</span>
-        <i id="close_modal" class="fa-solid fa-xmark"></i>
-      </div>
-
-      <div class="modal_content">
-        <form id="add_user_form">
-          <label for="username">Nom d'utilisateur</label>
-          <input
-            id="username"
-            required="true"
-            autocomplete="off"
-            type="text"
-            placeholder="Nom d'utilisateur"
-          />
-          <label for="password">Mot de passe</label>
-          <input
-            id="password"
-            required="true"
-            autocomplete="off"
-            type="password"
-            placeholder="Mot de passe"
-          />
-
-          <label for="username">Rôles</label>
-          <select id="role" required="true">
-            <option disabled selected>Choisir un rôle</option>
-            <option>Inviter</option>
-            <option>Membre</option>
-            <option>Administrateur</option>
-            <option>Passe partout</option>
-          </select>
-          <div class="modal_footer">
-            <button id="button_add_user_cancel" type="reset">Annuler</button>
-            <button id="button_add_user_submit" type="submit">Ajouter</button>
-          </div>
-        </form>
-      </div>
+    <div class="modal" id="modal">
+      <div class="modal-header" id="modal-header"></div>
+      <div class="modal-body" id="modal-body"></div>
     </div>
 
+    <!-- 
     <div id="modal-link-badge">
       <div id="modal-link-header" class="modal_header"></div>
 
@@ -127,7 +73,7 @@
           <label for="badge-id">Badge ID</label>
         </form>
       </div>
-    </div>
+    </div> -->
 
     <script src="scripts.js" type="module"></script>
   </body>

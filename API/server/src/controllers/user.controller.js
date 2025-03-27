@@ -38,3 +38,19 @@ exports.getUsers = async (request, response) => {
     response.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+exports.deleteUser = async (request, response) => {
+  const { id } = request.body;
+
+  try {
+    const [result] = await db.query("DELETE FROM users WHERE id = ?", [id]);
+    return response.status(200).json({ message: "User deleted !", id });
+  } catch (err) {
+    console.error("❌ Erreur SQL :", err); // Ajout pour debug
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return response.status(404).json({ message: "User not found !" });
+    } else {
+      return response.status(500).json({ message: "Erreur interne !" });
+    }
+  }
+};
