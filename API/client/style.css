@@ -1,0 +1,372 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+
+:root {
+  --background: rgb(33, 37, 45); /* hsl(220 13% 18%) */
+  --foreground: rgb(168, 174, 187); /* hsl(219 14% 71%) */
+  --muted: rgb(38, 42, 50); /* hsl(220 12% 22%) */
+  --muted-foreground: rgb(182, 187, 199); /* hsl(220 12% 72%) */
+  --popover: rgb(28, 32, 39); /* hsl(220 13% 15%) */
+  --popover-foreground: rgb(199, 204, 218); /* hsl(219 14% 81%) */
+  --card: rgb(30, 34, 42); /* hsl(220 13% 16%) */
+  --card-foreground: rgb(183, 188, 202); /* hsl(219 14% 76%) */
+  --border: rgb(54, 56, 59); /* hsl(220 3% 23%) */
+  --input: rgb(61, 63, 67); /* hsl(220 3% 26%) */
+  --primary: rgb(214, 219, 231); /* hsl(220 13% 86%) */
+  --primary-foreground: rgb(61, 67, 79); /* hsl(220 13% 26%) */
+  --secondary: rgb(60, 62, 66); /* hsl(220 3% 25%) */
+  --secondary-foreground: rgb(214, 216, 219); /* hsl(220 3% 85%) */
+  --accent: rgb(83, 91, 109); /* hsl(220 13% 33%) */
+  --accent-foreground: rgb(232, 235, 243); /* hsl(220 13% 93%) */
+  --destructive: rgb(255, 59, 42); /* hsl(4 98% 50%) */
+  --destructive-foreground: rgb(255, 255, 255); /* hsl(0 0% 100%) */
+  --ring: rgb(214, 219, 231); /* hsl(220 13% 86%) */
+  --chart-1: rgb(214, 219, 231); /* hsl(220 13% 86%) */
+  --chart-2: rgb(60, 62, 66); /* hsl(220 3% 25%) */
+  --chart-3: rgb(83, 91, 109); /* hsl(220 13% 33%) */
+  --chart-4: rgb(66, 68, 73); /* hsl(220 3% 28%) */
+  --chart-5: rgb(212, 218, 232); /* hsl(220 16% 86%) */
+  --radius: 0.5rem;
+}
+
+body {
+  margin: auto;
+  width: 100vh;
+  height: 100vh;
+  background-color: var(--background);
+  font-family: "Roboto", sans-serif;
+  color: var(--foreground);
+}
+
+/* Components */
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.5rem;
+}
+
+/* Header */
+
+header {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-content: justify-content;
+  align-items: center;
+  padding: 2rem;
+  border-bottom: 1px solid var(--border);
+
+  .middle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+
+    form {
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem;
+      background-color: var(--card);
+      color: var(--foreground);
+      outline: none;
+    }
+
+    input {
+      width: 100%;
+      border: none;
+      font-size: 1rem;
+      color: var(--foreground);
+      background-color: var(--card);
+      outline: none;
+    }
+  }
+
+  .right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+
+    button {
+      display: flex;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      color: var(--foreground);
+      background-color: var(--card);
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      gap: 0.5rem;
+
+      &:hover {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        border-color: var(--primary);
+      }
+    }
+  }
+}
+
+/* Main section */
+
+main {
+  display: flex;
+  padding: 5rem 0px;
+  gap: 1rem;
+  justify-content: start;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+
+  .user-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    gap: 1rem;
+    width: 100%;
+    background: var(--card);
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease-in-out;
+
+    .user-card-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: start;
+      justify-content: center;
+
+      span:nth-child(1) {
+        color: var(--primary);
+        font-size: 1rem;
+      }
+
+      span:nth-child(2) {
+        color: var(--foreground);
+        font-size: 0.8rem;
+      }
+    }
+
+    .user-card-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+      }
+
+      i {
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+      }
+
+      i:nth-child(1),
+      i:nth-child(2) {
+        color: var(--foreground);
+
+        &:hover {
+          color: var(--primary);
+          scale: 1.2;
+        }
+      }
+
+      i:nth-child(3) {
+        color: var(--destructive);
+
+        &:hover {
+          color: var(--destructive-foreground);
+          scale: 1.2;
+        }
+      }
+    }
+
+    &:hover {
+      cursor: pointer;
+      filter: brightness(0.9);
+    }
+  }
+}
+
+/* Footer */
+
+footer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+  padding: 2rem;
+  border-top: 1px solid var(--border);
+
+  div {
+    display: flex;
+    justify-content: center;
+  }
+
+  a {
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    color: var(--foreground);
+    background-color: var(--card);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+  }
+}
+
+/* Modal */
+#modal-add-user {
+  display: none;
+  padding: 1rem;
+  justify-content: start;
+  align-items: start;
+  flex-direction: column;
+  gap: 2rem;
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 400px;
+  height: 400px;
+  overflow: auto;
+  background-color: var(--background);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 8px 0 #00000033, 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  transition: opacity 0.3s ease-in-out;
+
+  .modal_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+
+    span,
+    i {
+      font-size: 1.5rem;
+    }
+
+    i {
+      cursor: pointer;
+    }
+  }
+
+  .modal_content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+
+      input {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.5rem;
+        color: var(--primary);
+        outline: none;
+      }
+
+      select {
+        padding: 0.5rem;
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--foreground);
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .modal_footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 1rem;
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem 1rem;
+      outline: none;
+      transition: all 0.5s ease-in-out;
+
+      &:hover {
+        cursor: pointer;
+      }
+    }
+
+    button:nth-child(1) {
+      background-color: var(--destructive);
+      color: var(--primary);
+
+      &:hover {
+        background-color: var(--destructive-foreground);
+        color: var(--destructive);
+      }
+    }
+
+    button:nth-child(2) {
+      background-color: var(--card);
+      color: var(--primary);
+
+      &:hover {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+      }
+    }
+  }
+}
+
+#modal-link-badge {
+  display: none;
+  padding: 1rem;
+  justify-content: start;
+  align-items: start;
+  flex-direction: column;
+  gap: 2rem;
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 400px;
+  height: 400px;
+  overflow: auto;
+  background-color: var(--background);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 8px 0 #00000033, 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  transition: opacity 0.3s ease-in-out;
+}
