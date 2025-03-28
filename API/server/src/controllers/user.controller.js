@@ -1,5 +1,8 @@
 const db = require("../db/config");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+const SECRET_KEY = process.env.JWT_KEY_SECRET;
 
 exports.addUser = async (request, response) => {
   const { username, password, role, token } = request.body;
@@ -51,6 +54,53 @@ exports.deleteUser = async (request, response) => {
       return response.status(404).json({ message: "User not found !" });
     } else {
       return response.status(500).json({ message: "Erreur interne !" });
+    }
+  }
+};
+
+exports.loginUser = async (request, response) => {
+  const { username, password } = request.body;
+
+  try {
+    const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [
+      username,
+    ]);
+
+    const user = rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!user || !isMatch) {
+      return response.status(404).json({ message: "User not found !" });
+    }
+
+    const [badge] = await db.query("SELECT * FROM badges WHERE user_id = ?", [
+      user.id,
+    ]);
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        badge: badge,
+      },
+      SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    return response.status(200).json({
+      token: token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        badge: badge,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Erreur SQL :", err); // Ajout pour debug
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return response.status(404).json({ message: "User not found !" });
     }
   }
 };
