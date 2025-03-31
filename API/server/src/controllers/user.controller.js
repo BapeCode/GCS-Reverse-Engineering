@@ -5,8 +5,9 @@ require("dotenv").config();
 const SECRET_KEY = process.env.JWT_KEY_SECRET;
 
 exports.addUser = async (request, response) => {
-  const { username, password, role, token } = request.body;
-  console.log(username, password, role, token);
+  const { username, password, role } = request.body;
+  const token = bcrypt.hashSync(username + password, 10);
+
   let password_hashed;
   if (password) {
     password_hashed = await bcrypt.hash(password, 10);
@@ -97,6 +98,44 @@ exports.loginUser = async (request, response) => {
         badge: badge,
       },
     });
+  } catch (err) {
+    console.error("❌ Erreur SQL :", err); // Ajout pour debug
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return response.status(404).json({ message: "User not found !" });
+    }
+  }
+};
+
+exports.getAllRoles = async (request, response) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM roles");
+
+    if (rows.length > 0) {
+      return response.status(200).json(rows);
+    }
+  } catch (err) {
+    console.error("❌ Erreur SQL :", err); // Ajout pour debug
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return response.status(404).json({ message: "User not found !" });
+    }
+  }
+};
+
+exports.updateUser = async (request, response) => {
+  const { id, username, password, role } = request.body;
+  const password_hashed = await bcrypt.hash(password, 10);
+  const token = bcrypt.hashSync(username + password, 10);
+
+  try {
+    const [rows] = await db.query(
+      "UPDATE users SET username = ?, password = ?, role = ?, token = ? WHERE id = ?",
+      [username, password_hashed, role, token, id]
+    );
+
+    if (rows.affectedRows === 0) {
+      return response.status(404).json({ message: "User not found !" });
+    }
+    return response.status(200).json({ message: "User updated !", id });
   } catch (err) {
     console.error("❌ Erreur SQL :", err); // Ajout pour debug
     if (err.code === "ER_NO_SUCH_TABLE") {

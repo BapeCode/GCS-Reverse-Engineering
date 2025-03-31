@@ -1,12 +1,5 @@
 let Users = [];
-const roleAuthorized = {
-  inviter: false,
-  membre: false,
-  administrateur: true,
-  "passe partout": true,
-};
 const addUserButton = document.getElementById("add_user");
-const addBadge = document.getElementById("add_badge");
 const loginButton = document.getElementById("login-user");
 const logoutButton = document.getElementById("logout-user");
 const avatarButton = document.getElementById("avatar-user");
@@ -43,8 +36,7 @@ const HandleFormSubmit = async () => {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
     const role = document.getElementById("role").value;
-    const token = GenerateToken(username, password);
-    const data = { username, password, role, token };
+    const data = { username, password, role };
 
     try {
       const response = await fetch("http://localhost:3000/api/users", {
@@ -67,6 +59,39 @@ const HandleFormSubmit = async () => {
       return GetUsers();
     } catch (err) {
       console.error("❌ Erreur lors du submit :", err);
+    }
+  });
+};
+
+const HandleFormUpdateUser = async () => {
+  const form = document.getElementById("update-form");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const role = document.getElementById("role").value;
+    const id = e.target.dataset.id;
+    const data = { id, username, password, role };
+
+    try {
+      const response = await fetch("http://localhost:3000/api/users", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.status === 200) {
+        modalBody.innerHTML = "";
+        modalHeader.innerHTML = "";
+        modal.style.display = "none";
+        GetUsers();
+        return console.log("✅ User updated");
+      }
+    } catch (err) {
+      return console.error("❌ Erreur lors du submit :", err);
     }
   });
 };
@@ -119,34 +144,48 @@ const HandleLoginUser = async () => {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur ${response.status} : ${errorText}`);
-      }
+      const result = await response.json();
 
-      const resp = await response.json();
-
-      localStorage.setItem("token", resp.token);
-      localStorage.setItem("user", JSON.stringify(resp.user));
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("user", JSON.stringify(result.user));
       isLoggedIn();
       modalHeader.innerHTML = "";
       modalBody.innerHTML = "";
       modal.style.display = "none";
-      return console.log("✅ Utilisateur connecté :", resp);
+      return console.log("✅ Utilisateur connecté :", result);
     } catch (err) {
-      return console.error("❌ Erreur lors du submit :", err);
+      return console.error("❌ Erreur lors du submit :", err.message);
     }
   });
 };
 
-function RendersUsers(users) {
+const getAllRoles = async () => {
+  const response = await fetch("http://localhost:3000/api/users/roles", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Erreur ${response.status} : ${errorText}`);
+  }
+  const result = await response.json();
+  console.log("✅ Rôles chargés :", result);
+  return result || [];
+};
+
+async function RendersUsers(users) {
+  const roles = await getAllRoles();
   userList.innerHTML = users
     .map((user) => {
+      const role = roles.find((role) => role.role_name === user.role);
       return `
     
       <div class="user-card" data-id="${user.id}">
         <div class="user-card-left">
             <span>${user.username}</span>
-            <span>${user.role}</span>
+            <span>${role.role_label}</span>
         </div>
     
         <div class="user-card-right">
@@ -173,8 +212,9 @@ function RendersUsers(users) {
   ManageUsers();
 }
 
-function OpenModal(type, user = null) {
+async function OpenModal(type, user = null) {
   if (type === "add_user") {
+    const roles = await getAllRoles();
     modalHeader.innerHTML = `
       <h2>Ajouter un utilisateur</h2>
       <div id="closeModal">
@@ -204,10 +244,10 @@ function OpenModal(type, user = null) {
         <label for="username">Rôles</label>
         <select id="role" required="true">
           <option disabled selected>Choisir un rôle</option>
-          <option>Inviter</option>
-          <option>Membre</option>
-          <option>Administrateur</option>
-          <option>Passe partout</option>
+          ${roles.map((role) => {
+            return `<option value="${role.role_name}">${role.role_label}</option>`;
+          })}
+
         </select>
 
         <div class="modal-submit">
@@ -220,15 +260,57 @@ function OpenModal(type, user = null) {
     modal.style.display = "flex";
 
     HandleFormSubmit();
-  } else if (type === "link_badge") {
+  } else if (type === "update_user") {
+    const roles = await getAllRoles();
+
     modalHeader.innerHTML = `
-      <h2>Attribué un badge à '${user.username}'</h2>
+      <h2>Modifier la fiche de '${user.username}'</h2>
       <div id="closeModal">
         <i class="fa-solid fa-xmark"></i>
       </div>
     `;
 
+    modalBody.innerHTML = `
+      <form data-id="${user.id}" id="update-form">
+        <label for="username">Nom d'utilisateur</label>
+        <input
+          id="username"
+          required="false"
+          autocomplete="off"
+          type="text"
+          placeholder="Nom d'utilisateur"
+          value="${user.username}"
+        />
+        <label for="password">Mot de passe</label>
+        <input
+          id="password"
+          required="false"
+          autocomplete="off"
+          type="password"
+          placeholder="Mot de passe"
+        />
+
+        <label for="username">Rôles</label>
+        <select id="role" required="false">
+          <option disabled selected value="${user.role}">${
+      roles.find((role) => role.role_name === user.role).role_label
+    }</option>
+          ${roles.map((role) => {
+            if (role.role_name !== user.role) {
+              return `<option value="${role.role_name}">${role.role_label}</option>`;
+            }
+          })}
+        </select>
+
+        <div class="modal-submit">
+          <button id="button_update_cancel" type="reset">Annuler</button>
+          <button id="button_update_submit" type="submit">Mettre à jour</button>
+        </div>
+      </form>
+    `;
+
     modal.style.display = "flex";
+    HandleFormUpdateUser();
   } else if (type === "login") {
     modalHeader.innerHTML = `
       <h2>Connexion à WaveGuardian</h2>
@@ -272,8 +354,8 @@ function OpenModal(type, user = null) {
     modal.style.display = "flex";
     HandleLoginUser();
   } else if (type === "avatar-user") {
-    console.log(user.badge);
-
+    const roles = await getAllRoles();
+    const role = roles.find((role) => role.role_name === user.role);
     modalHeader.innerHTML = `
         <h2>Profil de l'utilisateur '${user.username}'</h2>
         <div id="closeModal">
@@ -283,7 +365,7 @@ function OpenModal(type, user = null) {
 
     modalBody.innerHTML = `
         <div class="user-info">
-            <p><strong>Rôle :</strong> ${user.role}</p>
+            <p><strong>Rôle :</strong> ${role.role_label}</p>
             <p><strong>Badges :</strong> ${
               user.badge.level ? user.badge.level : "Aucun badge attribué"
             }</p>
@@ -291,7 +373,7 @@ function OpenModal(type, user = null) {
               user.badge.update_at ? user.badge.update_at : "Aucune activité"
             }</p>
             
-            <div class="modal-submit">
+            <div class="modal-submit" style="justify-content: center;">
                 <button id="delete-user">
                     <i class="fa-solid fa-trash"></i> Supprimer le compte
                 </button>
@@ -317,12 +399,22 @@ function ManageUsers() {
     });
   });
 
+  updateUser.forEach((button) => {
+    button.addEventListener("click", async (e) => {
+      const userId = e.target.dataset.id;
+      let userSelected = Users.find(
+        (user) => user.id === Number(e.target.dataset.id)
+      );
+      OpenModal("update_user", userSelected);
+    });
+  });
+
   linkBadge.forEach((link) => {
     link.addEventListener("click", async (e) => {
       let userSelected = Users.find(
         (user) => user.id === Number(e.target.dataset.id)
       );
-      OpenModal("link_badge", userSelected);
+      // OpenModal("link_badge", userSelected);
     });
   });
 
@@ -336,13 +428,11 @@ function ManageUsers() {
 function updateUIForAuth(isAuthenticated) {
   if (isAuthenticated) {
     addUserButton.style.display = "flex";
-    addBadge.style.display = "flex";
     logoutButton.style.display = "flex";
     loginButton.style.display = "none";
     avatarButton.style.display = "flex";
   } else {
     addUserButton.style.display = "none";
-    addBadge.style.display = "none";
     logoutButton.style.display = "none";
     loginButton.style.display = "flex";
     avatarButton.style.display = "none";
@@ -368,11 +458,6 @@ function isLoggedIn() {
   }
 }
 
-function GenerateToken(username, password) {
-  const token = btoa(username + ":" + password);
-  return token;
-}
-
 function CloseModal() {
   const closeModal = document.getElementById("closeModal");
   closeModal.addEventListener("click", () => {
@@ -382,12 +467,39 @@ function CloseModal() {
   });
 }
 
+function PendingBadge() {
+  setInterval(async () => {
+    const response = await fetch("http://localhost:3000/api/badges/pending", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 200) {
+      const result = await response.json();
+      const link = document.getElementById("link-badge");
+      link.style.color = "green";
+      console.log("✅ Badge en attente !" + result.badge);
+    } else {
+      console.log("❌ Aucun badge en attente !");
+    }
+  }, 3000);
+}
+
+function HasPermission(permission) {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = user.role.toLowerCase();
+}
+
 // Evenent Listener
 addUserButton.addEventListener("click", () => {
   const user = JSON.parse(localStorage.getItem("user"));
-  if (roleAuthorized[user.role.toLowerCase()]) {
-    OpenModal("add_user");
-  }
+
+  // if (roleAuthorized[user.role.toLowerCase()]) {
+  //   OpenModal("add_user");
+  // }
+  OpenModal("add_user");
 });
 
 loginButton.addEventListener("click", () => {
@@ -416,5 +528,6 @@ avatarButton.addEventListener("click", () => {
 
 window.addEventListener("DOMContentLoaded", async () => {
   isLoggedIn();
+  PendingBadge();
   await GetUsers();
 });
