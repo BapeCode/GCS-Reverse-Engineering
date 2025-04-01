@@ -36,7 +36,9 @@ exports.addUser = async (request, response) => {
 
 exports.getUsers = async (request, response) => {
   try {
-    const [rows] = await db.query("SELECT * FROM users");
+    const [rows] = await db.query(
+      "SELECT users.id, users.username, users.role, badges.badge_id, badges.level, badges.created_at FROM users LEFT JOIN badges ON users.id = badges.user_id"
+    );
     return response.status(200).json(rows);
   } catch (err) {
     response.status(500).json({ message: "Internal Server Error" });
@@ -67,6 +69,8 @@ exports.loginUser = async (request, response) => {
       username,
     ]);
 
+    console.log(rows);
+
     const user = rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -83,7 +87,10 @@ exports.loginUser = async (request, response) => {
         id: user.id,
         username: user.username,
         role: user.role,
-        badge: badge,
+        badge: {
+          badge_id: badge[0] ? badge[0].badge_id : null,
+          level: badge[0] ? badge[0].level : null,
+        },
       },
       SECRET_KEY,
       { expiresIn: "1h" }
@@ -95,7 +102,10 @@ exports.loginUser = async (request, response) => {
         id: user.id,
         username: user.username,
         role: user.role,
-        badge: badge,
+        badge: {
+          badge_id: badge[0] ? badge[0].badge_id : null,
+          level: badge[0] ? badge[0].level : null,
+        },
       },
     });
   } catch (err) {
@@ -108,10 +118,20 @@ exports.loginUser = async (request, response) => {
 
 exports.getAllRoles = async (request, response) => {
   try {
-    const [rows] = await db.query("SELECT * FROM roles");
+    const [rows] = await db.query("SELECT *FROM roles");
+    const [permissions] = await db.query("SELECT * FROM permissions");
+    const data = rows.map((role) => {
+      return {
+        role_name: role.role_name,
+        role_label: role.role_label,
+        permissions: permissions
+          .filter((permission) => permission.role === role.role_name)
+          .map((permission) => permission.permission),
+      };
+    });
 
     if (rows.length > 0) {
-      return response.status(200).json(rows);
+      return response.status(200).json(data);
     }
   } catch (err) {
     console.error("❌ Erreur SQL :", err); // Ajout pour debug
@@ -136,6 +156,24 @@ exports.updateUser = async (request, response) => {
       return response.status(404).json({ message: "User not found !" });
     }
     return response.status(200).json({ message: "User updated !", id });
+  } catch (err) {
+    console.error("❌ Erreur SQL :", err); // Ajout pour debug
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return response.status(404).json({ message: "User not found !" });
+    }
+  }
+};
+
+exports.getHistory = async (request, response) => {
+  const { id } = request.params;
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM history WHERE user_id = ? ORDER BY date DESC",
+      [id]
+    );
+
+    console.log(rows);
+    return response.status(200).json(rows);
   } catch (err) {
     console.error("❌ Erreur SQL :", err); // Ajout pour debug
     if (err.code === "ER_NO_SUCH_TABLE") {

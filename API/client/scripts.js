@@ -134,6 +134,7 @@ const HandleLoginUser = async () => {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
     const data = { username, password };
+    console.log(username, password);
 
     try {
       const response = await fetch("http://localhost:3000/api/users/login", {
@@ -149,6 +150,7 @@ const HandleLoginUser = async () => {
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
       isLoggedIn();
+      GetUsers();
       modalHeader.innerHTML = "";
       modalBody.innerHTML = "";
       modal.style.display = "none";
@@ -171,6 +173,7 @@ const getAllRoles = async () => {
     throw new Error(`Erreur ${response.status} : ${errorText}`);
   }
   const result = await response.json();
+  localStorage.setItem("roles", JSON.stringify(result));
   console.log("✅ Rôles chargés :", result);
   return result || [];
 };
@@ -185,31 +188,61 @@ async function RendersUsers(users) {
       <div class="user-card" data-id="${user.id}">
         <div class="user-card-left">
             <span>${user.username}</span>
-            <span>${role.role_label}</span>
+            <span>${role.role_label} - ${
+        user.level ? "Badge attribué" : "Aucun badge"
+      }</span>
         </div>
     
-        <div class="user-card-right">
-          <button id="link-badge" data-id="${user.id}">
-              <i data-id="${user.id}" class="fa-solid fa-link"></i>
-          </button>
+        ${
+          isLoggedIn()
+            ? `
+        
+          <div class="user-card-right">
+            <button id="link-badge" data-id="${user.id}">
+                <i data-id="${user.id}" class="fa-solid fa-link"></i>
+            </button>
 
-          <button id="update-user" data-id="${user.id}">
-            <i data-id="${user.id}" class="fa-solid fa-pen"></i>
-          </button>
+            <button id="update-user" data-id="${user.id}">
+              <i data-id="${user.id}" class="fa-solid fa-pen"></i>
+            </button>
 
-          <button id="history-user" data-id="${user.id}">
-            <i data-id="${user.id}" class="fa-solid fa-history"></i>
-          </button>
+            <button id="history-user" data-id="${user.id}">
+              <i data-id="${user.id}" class="fa-solid fa-history"></i>
+            </button>
 
-          <button id="delete-user" data-id="${user.id}">
-            <i data-id="${user.id}" class="fa-solid fa-trash"></i>
-          </button>
-        </div>
+            <button id="delete-user" data-id="${user.id}">
+              <i data-id="${user.id}" class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+
+        `
+            : ``
+        }
       </div>
     `;
     })
     .join("");
   ManageUsers();
+}
+
+async function getUserHistory(id) {
+  const response = await fetch(
+    `http://localhost:3000/api/users/${id}/history`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Erreur ${response.status} : ${errorText}`);
+  }
+
+  const result = await response.json();
+  console.log("✅ Historique chargé :", result);
+  return result || [];
 }
 
 async function OpenModal(type, user = null) {
@@ -353,9 +386,10 @@ async function OpenModal(type, user = null) {
 
     modal.style.display = "flex";
     HandleLoginUser();
-  } else if (type === "avatar-user") {
+  } else if (type === "avatar_user") {
     const roles = await getAllRoles();
     const role = roles.find((role) => role.role_name === user.role);
+    const history = await getUserHistory(user.id);
     modalHeader.innerHTML = `
         <h2>Profil de l'utilisateur '${user.username}'</h2>
         <div id="closeModal">
@@ -367,10 +401,14 @@ async function OpenModal(type, user = null) {
         <div class="user-info">
             <p><strong>Rôle :</strong> ${role.role_label}</p>
             <p><strong>Badges :</strong> ${
-              user.badge.level ? user.badge.level : "Aucun badge attribué"
+              user.badge.level
+                ? `ID : ${user.badge.badge_id} - Level : ${user.badge.level}`
+                : "Aucun badge attribué"
             }</p>
             <p><strong>Dernières activité :</strong> ${
-              user.badge.update_at ? user.badge.update_at : "Aucune activité"
+              history && history.length > 0
+                ? new Date(history[0].date).toLocaleString("fr-FR")
+                : "Aucune activité"
             }</p>
             
             <div class="modal-submit" style="justify-content: center;">
@@ -382,8 +420,41 @@ async function OpenModal(type, user = null) {
     `;
 
     modal.style.display = "flex";
+  } else if (type === "history_user") {
+    const history = await getUserHistory(user.id);
+    console.log(history);
+    modalHeader.innerHTML = `
+        <h2>Historique de l'utilisateur '${user.username}'</h2>
+        <div id="closeModal">
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+    `;
+
+    modalBody.innerHTML = `
+        <div class="user-info">
+            <p><strong>Dernières activités :</strong> ${
+              history && history.length > 0
+                ? history
+                    .map((history) => {
+                      return new Date(history.date).toLocaleString("fr-FR");
+                    })
+                    .join(", ")
+                : "Aucune activité"
+            }</p>
+
+            <div class="modal-submit" style="justify-content: center;">
+                <button id="delete-user">
+                    <i class="fa-solid fa-trash"></i> Supprimer le compte
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = "flex";
   }
-  CloseModal();
+  setTimeout(() => {
+    CloseModal();
+  }, 0);
 }
 
 function ManageUsers() {
@@ -395,32 +466,78 @@ function ManageUsers() {
   deleteUser.forEach((button) => {
     button.addEventListener("click", async (e) => {
       const userId = e.target.dataset.id;
-      HandleDeleteUser(userId);
+      if (HasPermission("delete_user")) {
+        console.log("✅ Suppression de l'utilisateur", userIdà);
+        HandleDeleteUser(userId);
+      }
     });
   });
 
   updateUser.forEach((button) => {
     button.addEventListener("click", async (e) => {
-      const userId = e.target.dataset.id;
       let userSelected = Users.find(
         (user) => user.id === Number(e.target.dataset.id)
       );
-      OpenModal("update_user", userSelected);
+      if (HasPermission("update_user")) {
+        OpenModal("update_user", userSelected);
+      }
     });
   });
 
   linkBadge.forEach((link) => {
+    const user = Users.find((user) => user.id === Number(link.dataset.id));
+    if (user.badge_id !== null) {
+      link.style.color = "var(--secondary)";
+    }
     link.addEventListener("click", async (e) => {
+      if (!HasPermission("link_badge")) {
+        return;
+      }
       let userSelected = Users.find(
         (user) => user.id === Number(e.target.dataset.id)
       );
-      // OpenModal("link_badge", userSelected);
+      if (userSelected.badge_id === null) {
+        const badgeId = localStorage.getItem("badge_id");
+        if (badgeId && badgeId !== "null") {
+          console.log("✅ Badge attribué : " + badgeId);
+          const data = { badge_id: badgeId, user_id: userSelected.id };
+          const response = fetch("http://localhost:3000/api/badges", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          response.then((res) => {
+            if (res.status === 200) {
+              GetUsers();
+              linkBadge.style.color = "var(--foreground)";
+              localStorage.removeItem("badge_id");
+            } else {
+              console.log(
+                "❌ Erreur lors de l'attribution du badge !",
+                res.message
+              );
+            }
+          });
+        } else {
+          console.log("❌ Aucun badge en attente !");
+        }
+      } else {
+        console.log("❌ L'utilisateur a déjà un badge !");
+      }
     });
   });
 
   historyUser.forEach((button) => {
     button.addEventListener("click", async (e) => {
-      console.log("History user", e.target.dataset.id);
+      let userSelected = Users.find(
+        (user) => user.id === Number(e.target.dataset.id)
+      );
+      if (HasPermission("history_user")) {
+        OpenModal("history_user", userSelected);
+      }
     });
   });
 }
@@ -460,11 +577,13 @@ function isLoggedIn() {
 
 function CloseModal() {
   const closeModal = document.getElementById("closeModal");
-  closeModal.addEventListener("click", () => {
-    modalBody.innerHTML = "";
-    modalHeader.innerHTML = "";
-    modal.style.display = "none";
-  });
+  if (closeModal) {
+    closeModal.addEventListener("click", () => {
+      modalBody.innerHTML = "";
+      modalHeader.innerHTML = "";
+      modal.style.display = "none";
+    });
+  }
 }
 
 function PendingBadge() {
@@ -478,28 +597,44 @@ function PendingBadge() {
 
     if (response.status === 200) {
       const result = await response.json();
-      const link = document.getElementById("link-badge");
-      link.style.color = "green";
-      console.log("✅ Badge en attente !" + result.badge);
+      const link = document.querySelectorAll("#link-badge");
+      link.forEach((link) => {
+        if (link.style.color !== "var(--secondary)") {
+          link.style.color = "green";
+        }
+      });
+      localStorage.setItem("badge_id", result.badge);
+
+      console.log("✅ Badge en attente : " + result.badge);
     } else {
       console.log("❌ Aucun badge en attente !");
     }
-  }, 3000);
+  }, 5000);
 }
 
 function HasPermission(permission) {
   const user = JSON.parse(localStorage.getItem("user"));
-  const role = user.role.toLowerCase();
+  const allRole = JSON.parse(localStorage.getItem("roles"));
+
+  for (const role of allRole) {
+    if (role.role_name === user.role) {
+      for (const perm of role.permissions) {
+        if (perm === permission) {
+          console.log("✅ Permission accordée !");
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 // Evenent Listener
 addUserButton.addEventListener("click", () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  // if (roleAuthorized[user.role.toLowerCase()]) {
-  //   OpenModal("add_user");
-  // }
-  OpenModal("add_user");
+  console.log(HasPermission("create_user"));
+  if (HasPermission("create_user")) {
+    OpenModal("add_user");
+  }
 });
 
 loginButton.addEventListener("click", () => {
@@ -523,7 +658,7 @@ searchInput.addEventListener("input", (e) => {
 
 avatarButton.addEventListener("click", () => {
   const user = JSON.parse(localStorage.getItem("user"));
-  OpenModal("avatar-user", user);
+  OpenModal("avatar_user", user);
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
