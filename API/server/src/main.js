@@ -7,7 +7,11 @@ const badge = require("./routes/badge.routes");
 const user = require("./routes/user.routes");
 
 // Configuration CORS plus permissive pour le développement
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 // Route de test
 app.get("/test", (req, res) => {
